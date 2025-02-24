@@ -1,0 +1,47 @@
+#========================================================
+Script Test Info
+#========================================================
+Batch Size:
+ 24
+Number of Workers:
+ 1
+Train set:
+ 11640
+
+Val set:
+ 1800
+
+Test set:
+ 3432
+
+Train Loader Size:
+ 485
+
+Val Loader Size:
+ 75
+
+Test Loader Size:
+ 143
+
+Batch Information [#_samples, #_channels, x, y]:
+ torch.Size([24, 3, 224, 224])
+
+Connected Device:
+  cuda:0
+#========================================================
+Running Training
+#========================================================
+1,  Train Loss: 0.995, Val Loss: 0.852
+Saving model
+Epoch Calculation Time (s): 888.6s
+
+Training Completed
+#========================================================
+Running Testing
+#========================================================
+Model Tested: resnet.pth
+Total Samples: 3432
+Predicted Correct: 2023
+Accuracy of the network on the test images: 58.945 %
+
+#========================================================
