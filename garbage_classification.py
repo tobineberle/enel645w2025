@@ -24,7 +24,7 @@ import time
 # -----------
 #============================================
 BATCH_SIZE = 16 
-NUM_WORKERS = 4
+NUM_WORKERS = 1
 NUM_EPOCHS = 5
 BEST_MODEL_PATH = './best-models/'
 TRAIN_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Train"
@@ -133,7 +133,7 @@ class resnetCNN(nn.Module):
 # Training and validation script for NN classes
 #============================================
 
-def nnTrainer(model, best_model_path, learning_rate, learning_rate_decay, num_epochs):
+def nnTrainer(model, model_save_name, learning_rate, learning_rate_decay, num_epochs):
     print("Running Training")
     print("#========================================================")
 
@@ -181,20 +181,18 @@ def nnTrainer(model, best_model_path, learning_rate, learning_rate_decay, num_ep
             # Model checkpointing, saves best model
             if val_loss < best_loss:
                 print("Saving model")
-                torch.save(model.state_dict(), best_model_path)
+                torch.save(model.state_dict(), BEST_MODEL_PATH + model_save_name)
                 best_loss = val_loss
 
             end_time = time.time()
-            print(f'Epoch Duration: {end_time - start_time}')
+            print(f'\nEpoch Calculation Time (s): {(end_time - start_time):.1f}s')
 
     print("Training Completed")
-
 
 #============================================
 # Main
 #============================================
 
-# Print some sys/data info
 print("#========================================================")
 print("Script Test Info")
 print("#========================================================")
@@ -209,6 +207,7 @@ print("\nTest Loader Size:\n", len(test_loader))
 train_batch = next(iter(train_loader))
 print("\nBatch Information [#_samples, #_channels, x, y]:\n",train_batch[0].size())
 
+# Init a device class
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print("\nConnected Device:\n ", device)
 
@@ -217,6 +216,9 @@ image_number = np.random.randint(low = 0, high = BATCH_SIZE - 1)
 image_show(train_batch, image_number, class_names)
 print("#========================================================")
 
+# Init a model
 resnet_model = resnetCNN(4, (3,224,224), True)
+# Send our model to the device (GPU or CPU)
 resnet_model.to(device)
-nnTrainer(resnet_model, (BEST_MODEL_PATH + "resnet.pth"), 0.001, 0.9, NUM_EPOCHS)
+nnTrainer(resnet_model, "resnet.pth", 0.001, 0.9, NUM_EPOCHS)
+print("\n#========================================================")
