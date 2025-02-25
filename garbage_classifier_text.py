@@ -26,7 +26,7 @@ import re
 # Definitions
 # -----------
 #============================================
-BATCH_SIZE = 24
+BATCH_SIZE = 1
 NUM_WORKERS = 1
 NUM_EPOCHS = 1
 BEST_MODEL_PATH = './best-models/'
@@ -153,6 +153,7 @@ def nnTrainer(model, model_save_name, learning_rate, learning_rate_decay, num_ep
         start_time = time.time()
         train_loss = 0.0
         model.train()
+        i = 0
         for batch in train_loader:
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
@@ -167,7 +168,7 @@ def nnTrainer(model, model_save_name, learning_rate, learning_rate_decay, num_ep
             loss.backward()
             # Update model parameters using computer optimizer gradients
             optimizer.step()
-
+            i += 1
             train_loss += loss.item()
         print(f'{epoch + 1},  Train Loss: {train_loss / i:.3f},', end = ' ')
 
@@ -178,6 +179,7 @@ def nnTrainer(model, model_save_name, learning_rate, learning_rate_decay, num_ep
         val_loss = 0
         model.eval()
         with torch.no_grad():
+            i = 0
             for batch in val_loader:
                 input_ids = batch['input_ids'].to(device)
                 attention_mask = batch['attention_mask'].to(device)
@@ -185,6 +187,7 @@ def nnTrainer(model, model_save_name, learning_rate, learning_rate_decay, num_ep
                 outputs = model(input_ids, attention_mask)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()
+                i += 1
 
             print(f'Val Loss: {val_loss / i:.3f}', end = '\n')
 
@@ -224,8 +227,8 @@ def nnTester(model, pth_name):
             outputs = model(input_ids, attention_mask)
             # Chose class based off highest probability
             _, predicted = torch.max(outputs.data, 1)
-            total += classes.size(0)
-            correct += (predicted == classes).sum().item()
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
     print(f'Model Tested: {pth_name}')
     print(f"Total Samples: {total}")
     print(f"Predicted Correct: {correct}")
