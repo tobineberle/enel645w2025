@@ -35,12 +35,12 @@ MAX_LENGTH = 200
 #============================================
 # Tuneable Parameters
 #============================================
-NUM_EPOCHS = 3
-BATCH_SIZE = 16
+NUM_EPOCHS = 5
+BATCH_SIZE = 20
 NUM_FUSION_FEATURES = 100
 WEIGHT_DECAY = 0.001
-LEARNING_RATE = 0.01
-DROPOUT = 0.4
+LEARNING_RATE = 0.001
+DROPOUT = 0.3
 #Best model save name
 SAVE_NAME = "best_fusion_model.pth"
 
@@ -326,5 +326,15 @@ for epoch in range(NUM_EPOCHS):
 model.load_state_dict(torch.load(BEST_MODEL_PATH + SAVE_NAME))
 # Evaluation
 test_predictions, test_classes = predict(model, test_loader, device)
-print("Correct Predictions: ", np.sum(test_predictions == test_classes))
+
+# Count number of predicted true values
+equal_count = 0
+for pred, class_ in test_predictions, test_classes:
+    if pred == class_:
+        equal_count += 1
+
+print("Correct Predictions: ", equal_count)
 print("Total Labels: ", len(test_classes) )
+# print(test_predictions[0:10])
+# print(test_classes[0:10])
+
