@@ -29,15 +29,19 @@ TRAIN_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Train"
 TEST_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Test"
 VAL_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Val"
 BEST_MODEL_PATH = './best-models/'
-
-# Tokenizer params
+NUM_WORKERS = 2 # Max 2 cpus
 MAX_LENGTH = 200
 
-# Model tunable params
-NUM_EPOCHS = 5
-NUM_WORKERS = 2 
+#============================================
+# Tuneable Parameters
+#============================================
+NUM_EPOCHS = 3
 BATCH_SIZE = 8
 NUM_FUSION_FEATURES = 100
+WEIGHT_DECAY = 0.001
+LEARNING_RATE = 0.01
+DROPOUT = 0.4
+#Best model save name
 SAVE_NAME = "best_fusion_model.pth"
 
 #============================================
@@ -81,7 +85,7 @@ class FusionDataSet(Dataset):
     def __len__(self):
         return len(self.labels)
 
-    # Reutnrs a sample from dataset based on given idx (for dataloader)
+    # Returns a sample from dataset based on given idx (for dataloader)
     def __getitem__(self, idx):
         image = self.images[idx]
         text = str(self.texts[idx])
@@ -126,6 +130,12 @@ train_dataset = FusionDataSet(transform, tokenizer, TRAIN_PATH, MAX_LENGTH)
 val_dataset = FusionDataSet(transform, tokenizer, VAL_PATH, MAX_LENGTH)
 test_dataset = FusionDataSet(transform, tokenizer, TEST_PATH, MAX_LENGTH)
 
+print("Train Dataset: ", len(train_dataset))
+print("Val Dataset: ", len(val_dataset))
+print("Test Dataset: ", len(test_dataset))
+
+
+
 # Create loaders
 train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = NUM_WORKERS)
 test_loader = DataLoader(test_dataset, batch_size = BATCH_SIZE, shuffle = False, num_workers = NUM_WORKERS)
@@ -155,7 +165,7 @@ class FusionNetwork(nn.Module):
         self.fc_text_norm = nn.LayerNorm(num_fusion_features)
         
         # Dense fusion layer & Dropout
-        self.drop = nn.Dropout(0.25) #NEW
+        self.drop = nn.Dropout(DROPOUT)
         self.fusion_classifier = nn.Linear(num_fusion_features * 2, num_classes)
 
 
@@ -258,12 +268,13 @@ best_loss = 1e+10 # best loss tracker
 # Model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Connected device: ", device)
+print("\n")
 imageModel = resnet18(weights='ResNet18_Weights.DEFAULT')
 textModel = DistilBertModel.from_pretrained('distilbert-base-uncased')
 model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES).to(device)
 
 # Training parameters
-optimizer = optim.Adam(model.parameters(), lr=2e-5)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay = WEIGHT_DECAY)
 criterion = nn.CrossEntropyLoss()
 
 # Code Test loop
@@ -280,6 +291,18 @@ criterion = nn.CrossEntropyLoss()
 #     end_time = time.time()
 #     print(f'Epoch Calculation Time (s): {(end_time - start_time):.1f}s\n')
 
+# def data(iterator):
+
+#     for batch in iterator:
+#         images = batch['image'].to(device)
+#         input_ids = batch['input_ids'].to(device)
+#         attention_mask = batch['attention_mask'].to(device)
+#         labels = batch['label'].to(device)
+
+#         print(images)
+#         print(input_ids)
+#         print(labels)
+# data(train_loader)
 
 # Training loop
 for epoch in range(NUM_EPOCHS):
@@ -295,9 +318,8 @@ for epoch in range(NUM_EPOCHS):
     end_time = time.time()
     print(f'Epoch Calculation Time (s): {(end_time - start_time):.1f}s\n')
 
-
 model.load_state_dict(torch.load(BEST_MODEL_PATH + SAVE_NAME))
 # Evaluation
 test_predictions, test_classes = predict(model, test_loader, device)
-print("Predictions: ", len(test_predictions))
-print("Labels: ", len(test_classes) )
+print("Correct Predictions: ", np.sum(test_predictions == test_classes))
+print("Total Labels: ", len(test_classes) )
