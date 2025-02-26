@@ -36,7 +36,7 @@ MAX_LENGTH = 200
 # Tuneable Parameters
 #============================================
 NUM_EPOCHS = 3
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 NUM_FUSION_FEATURES = 100
 WEIGHT_DECAY = 0.001
 LEARNING_RATE = 0.01
@@ -130,11 +130,9 @@ train_dataset = FusionDataSet(transform, tokenizer, TRAIN_PATH, MAX_LENGTH)
 val_dataset = FusionDataSet(transform, tokenizer, VAL_PATH, MAX_LENGTH)
 test_dataset = FusionDataSet(transform, tokenizer, TEST_PATH, MAX_LENGTH)
 
-print("Train Dataset: ", len(train_dataset))
-print("Val Dataset: ", len(val_dataset))
-print("Test Dataset: ", len(test_dataset))
-
-
+# print("Train Dataset: ", len(train_dataset))
+# print("Val Dataset: ", len(val_dataset))
+# print("Test Dataset: ", len(test_dataset))
 
 # Create loaders
 train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = NUM_WORKERS)
@@ -260,10 +258,16 @@ def predict(model, dataloader, device):
 #============================================
 # Main
 #============================================
-# print("\nTrain Loader Size:\n", len(train_loader))
-# train_batch = next(iter(train_loader))
+# Print our tuneable parameters
 
-best_loss = 1e+10 # best loss tracker
+print("#========================================================")
+print("NUM_EPOCHS = ", NUM_EPOCHS)
+print("BATCH_SIZE = ", BATCH_SIZE)
+print("NUM_FUSION_FEATURES = ", NUM_FUSION_FEATURES)
+print("WEIGHT_DECAY = ", WEIGHT_DECAY)
+print("LEARNING_RATE = ", LEARNING_RATE)
+print("DROPOUT = ", DROPOUT)
+print("#========================================================")
 
 # Model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -305,6 +309,7 @@ criterion = nn.CrossEntropyLoss()
 # data(train_loader)
 
 # Training loop
+best_loss = 1e+10 # best loss tracker
 for epoch in range(NUM_EPOCHS):
     start_time = time.time()
     train_loss = train(model, train_loader, optimizer, criterion, device)
