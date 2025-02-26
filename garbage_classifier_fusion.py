@@ -25,8 +25,6 @@ import re
 import numpy as np
 import time
 
-BEST_IMAGE_MODEL = "best_image.pth"
-BEST_TEST_MODEL = "best_text.pth"
 TRAIN_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Train"
 TEST_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Test"
 VAL_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Val"
@@ -36,10 +34,11 @@ BEST_MODEL_PATH = './best-models/'
 MAX_LENGTH = 200
 
 # Model tunable params
-NUM_EPOCHS = 10
-NUM_WORKERS = 4
-BATCH_SIZE = 16
-
+NUM_EPOCHS = 5
+NUM_WORKERS = 2 
+BATCH_SIZE = 8
+NUM_FUSION_FEATURES = 100
+SAVE_NAME = "best_fusion_model.pth"
 
 #============================================
 # Datasets
@@ -141,16 +140,24 @@ class FusionNetwork(nn.Module):
         super(FusionNetwork, self).__init__()
         # Image path
         self.imageModel = imageModel
+        # Setup for transfer learning
+        self.imageModel.eval()
+        for param in self.imageModel.parameters():
+            # Turn off weight updating
+            param.requires_grad = False
+
         self.imageModel.fc = nn.Linear(512, num_fusion_features)
         self.fc_image_norm = nn.LayerNorm(num_fusion_features)
-
+        
         # Text path
         self.textModel = textModel
         self.fc_text = nn.Linear(self.textModel.config.hidden_size, num_fusion_features)
         self.fc_text_norm = nn.LayerNorm(num_fusion_features)
         
-        # Dense fusion layer
+        # Dense fusion layer & Dropout
+        self.drop = nn.Dropout(0.25) #NEW
         self.fusion_classifier = nn.Linear(num_fusion_features * 2, num_classes)
+
 
     def forward(self, image, text, attention_mask):
         # Image path
@@ -166,6 +173,7 @@ class FusionNetwork(nn.Module):
         # Fusion path (concatenate horizontally)
         x = torch.cat((image_norm, text_norm), dim = 1)
         # Do we need to flatten?
+        x = self.drop(x)
         return self.fusion_classifier(x)
 
 #============================================
@@ -252,7 +260,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Connected device: ", device)
 imageModel = resnet18(weights='ResNet18_Weights.DEFAULT')
 textModel = DistilBertModel.from_pretrained('distilbert-base-uncased')
-model = FusionNetwork(imageModel, textModel, 4, 200).to(device)
+model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES).to(device)
 
 # Training parameters
 optimizer = optim.Adam(model.parameters(), lr=2e-5)
@@ -277,18 +285,18 @@ criterion = nn.CrossEntropyLoss()
 for epoch in range(NUM_EPOCHS):
     start_time = time.time()
     train_loss = train(model, train_loader, optimizer, criterion, device)
-    print(f'Epoch: {epoch+1}, Train Loss: {train_loss:.4f}')
+    print(f'Epoch: {epoch+1}, Train Loss: {train_loss:.5f}')
     val_loss = evaluate(model, val_loader, criterion, device)
-    print(f'Epoch: {epoch+1}, Val Loss: {val_loss:.4f}')
+    print(f'Epoch: {epoch+1}, Val Loss: {val_loss:.5f}')
     if val_loss < best_loss:
         best_loss = val_loss
-        torch.save(model.state_dict(), BEST_MODEL_PATH + 'best_model.pth')
+        torch.save(model.state_dict(), BEST_MODEL_PATH + SAVE_NAME)
         print("Saving Model")
     end_time = time.time()
     print(f'Epoch Calculation Time (s): {(end_time - start_time):.1f}s\n')
 
 
-model.load_state_dict(torch.load(BEST_MODEL_PATH +'best_model.pth'))
+model.load_state_dict(torch.load(BEST_MODEL_PATH + SAVE_NAME))
 # Evaluation
 test_predictions, test_classes = predict(model, test_loader, device)
 print("Predictions: ", len(test_predictions))
