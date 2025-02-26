@@ -35,8 +35,8 @@ MAX_LENGTH = 200
 #============================================
 # Tuneable Parameters
 #============================================
-NUM_EPOCHS = 5
-BATCH_SIZE = 20
+NUM_EPOCHS = 10
+BATCH_SIZE = 24
 NUM_FUSION_FEATURES = 100
 WEIGHT_DECAY = 0.001
 LEARNING_RATE = 0.001
@@ -329,10 +329,10 @@ test_predictions, test_classes = predict(model, test_loader, device)
 
 # Count number of predicted true values
 equal_count = 0
-for pred, class_ in test_predictions, test_classes:
+for pred, class_ in zip(test_predictions, test_classes):
     if pred == class_:
         equal_count += 1
-
+        
 print("Correct Predictions: ", equal_count)
 print("Total Labels: ", len(test_classes) )
 # print(test_predictions[0:10])
