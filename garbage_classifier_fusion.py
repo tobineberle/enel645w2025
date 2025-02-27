@@ -35,10 +35,10 @@ MAX_LENGTH = 200
 #============================================
 # Tuneable Parameters
 #============================================
-NUM_EPOCHS = 10
+NUM_EPOCHS = 20
 BATCH_SIZE = 24
 NUM_FUSION_FEATURES = 100
-WEIGHT_DECAY = 0.001
+WEIGHT_DECAY = 0.0001
 LEARNING_RATE = 0.001
 DROPOUT = 0.3
 #Best model save name
@@ -57,13 +57,21 @@ class FusionDataSet(Dataset):
         self.images = np.empty(0)
         self.labels = np.empty(0)
         self.texts = np.empty(0)
-        
+
+        def remove_before_last_slash(string):
+            # Use regex to match everything after the last "/"
+            match = re.search(r'[^/]*$', string)
+            if match:
+                return match.group(0)
+            return string  # In case no "/" is found
+
         # Based off in-class example to extract filenames
         def filename_to_text(file):
             file_no_ext, _ = os.path.splitext(file)
             text = file_no_ext.replace('_', ' ')
             text_without_digits = re.sub(r'\d+', '', text)
-            return text_without_digits
+            text_only = remove_before_last_slash(text_without_digits)
+            return text_only
         
         # Also based off inclass example to sort through the file structure
         def get_data():
