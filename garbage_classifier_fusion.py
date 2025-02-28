@@ -1,35 +1,34 @@
-# ============================================
+#============================================
 # Group 1: Assignment 2
 # ---------------------
 # Tobin Eberle
 # Jeff Wheeler
 # Ryan Baker
 # Tom Wilson
-# ============================================
+#============================================
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import torch.optim as optim
 
 
 import torchvision
-from torchvision.models import resnet18  # pretrained model
-from torchvision import transforms
+from torchvision.models import resnet18 # pretrained model
+from torchvision import models, transforms, datasets
 
-from transformers import DistilBertModel, DistilBertTokenizer # type: ignore
+from transformers import DistilBertModel, DistilBertTokenizer
 
 import os
 import re
 import numpy as np
 import time
 
-# ============================================
+#============================================
 # Datasets
-# ============================================
+#============================================
 # Need to return image, tokenized text, and label
-
-
 class FusionDataSet(Dataset):
     def __init__(self, transform, tokenizer, dir, max_len):
         self.transform = transform
@@ -40,13 +39,21 @@ class FusionDataSet(Dataset):
         self.labels = np.empty(0)
         self.texts = np.empty(0)
 
+        def remove_before_last_slash(string):
+            # Use regex to match everything after the last "/"
+            match = re.search(r'[^/]*$', string)
+            if match:
+                return match.group(0)
+            return string  # In case no "/" is found
+
         # Based off in-class example to extract filenames
         def filename_to_text(file):
             file_no_ext, _ = os.path.splitext(file)
             text = file_no_ext.replace('_', ' ')
             text_without_digits = re.sub(r'\d+', '', text)
-            return text_without_digits
-
+            text_only = remove_before_last_slash(text_without_digits)
+            return text_only
+        
         # Also based off inclass example to sort through the file structure
         def get_data():
             classes = sorted(os.listdir(self.dir))
@@ -74,10 +81,10 @@ class FusionDataSet(Dataset):
         label = self.labels[idx]
 
         # Need to return the image as tensor
-        image = torchvision.io.decode_image(image, mode="RGB")
+        image = torchvision.io.decode_image(image, mode= "RGB")
         image = transforms.functional.to_pil_image(image)
         image = self.transform(image)
-
+       
         # Need to return text as tensor
         encoding = self.tokenizer.encode_plus(
             text,
@@ -97,14 +104,12 @@ class FusionDataSet(Dataset):
             'label': torch.tensor(label, dtype=torch.long)
         }
 
-
-# ============================================
+#============================================
 # Fusion Network
-# ============================================
-
+#============================================
 
 class FusionNetwork(nn.Module):
-    def __init__(self, imageModel, textModel, num_classes, num_fusion_features, dropout=0.3):
+    def __init__(self, imageModel, textModel, num_classes, num_fusion_features, dropout):
         super(FusionNetwork, self).__init__()
         # Image path
         self.imageModel = imageModel
@@ -116,15 +121,16 @@ class FusionNetwork(nn.Module):
 
         self.imageModel.fc = nn.Linear(512, num_fusion_features)
         self.fc_image_norm = nn.LayerNorm(num_fusion_features)
-
+        
         # Text path
         self.textModel = textModel
         self.fc_text = nn.Linear(self.textModel.config.hidden_size, num_fusion_features)
         self.fc_text_norm = nn.LayerNorm(num_fusion_features)
-
+        
         # Dense fusion layer & Dropout
         self.drop = nn.Dropout(dropout)
         self.fusion_classifier = nn.Linear(num_fusion_features * 2, num_classes)
+
 
     def forward(self, image, text, attention_mask):
         # Image path
@@ -132,22 +138,21 @@ class FusionNetwork(nn.Module):
         image_norm = self.fc_image_norm(image)
 
         # Text path
-        text = self.textModel(input_ids=text, attention_mask=attention_mask)
+        text = self.textModel(input_ids = text, attention_mask = attention_mask)
         text = text[0]
         text = self.fc_text(text[:, 0])
         text_norm = self.fc_text_norm(text)
 
         # Fusion path (concatenate horizontally)
-        x = torch.cat((image_norm, text_norm), dim=1)
+        x = torch.cat((image_norm, text_norm), dim = 1)
         # Do we need to flatten?
         x = self.drop(x)
         return self.fusion_classifier(x)
 
-# ============================================
+#============================================
 # Training/Validtion/Testing Functions
-# ============================================
+#============================================
 # As per the online text example
-
 
 def train(model, iterator, optimizer, criterion, device):
     model.train()
@@ -167,7 +172,6 @@ def train(model, iterator, optimizer, criterion, device):
         total_loss += loss.item()
     return total_loss / len(iterator)
 
-
 # Define evaluation function
 def evaluate(model, iterator, criterion, device):
     model.eval()
@@ -186,7 +190,6 @@ def evaluate(model, iterator, criterion, device):
 
     return total_loss / len(iterator)
 
-
 def predict(model, dataloader, device):
     model.eval()  # Set the model to evaluation mode
     total = 0
@@ -202,6 +205,7 @@ def predict(model, dataloader, device):
             attention_mask = batch['attention_mask'].to(device) 
             labels = batch['label'].to(device)
 
+
             # Forward pass
             outputs = model(images, input_ids, attention_mask)
 
@@ -216,11 +220,11 @@ def predict(model, dataloader, device):
     print(f"Test Accuracy: {test_accuracy:.2f}%")
     return predictions, classes
 
-
-# Wrapped inside main so above functions/classes can be imported without executing code below
-# ============================================
+#============================================
 # Main
-# ============================================
+#============================================
+# Print our tuneable parameters
+
 if __name__ == "__main__":
     TRAIN_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Train"
     TEST_PATH = "/work/TALC/enel645_2025w/garbage_data/CVPR_2024_dataset_Test"
@@ -229,21 +233,30 @@ if __name__ == "__main__":
     NUM_WORKERS = 2 # Max 2 cpus
     MAX_LENGTH = 200
 
-    # ============================================
+    #============================================
     # Tuneable Parameters
-    # ============================================
-    NUM_EPOCHS = 10
+    #============================================
+    NUM_EPOCHS = 20
     BATCH_SIZE = 24
     NUM_FUSION_FEATURES = 100
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0001
     LEARNING_RATE = 0.001
     DROPOUT = 0.3
-    # Best model save name
+    #Best model save name
     SAVE_NAME = "best_fusion_model.pth"
+
+    print("#========================================================")
+    print("NUM_EPOCHS = ", NUM_EPOCHS)
+    print("BATCH_SIZE = ", BATCH_SIZE)
+    print("NUM_FUSION_FEATURES = ", NUM_FUSION_FEATURES)
+    print("WEIGHT_DECAY = ", WEIGHT_DECAY)
+    print("LEARNING_RATE = ", LEARNING_RATE)
+    print("DROPOUT = ", DROPOUT)
+    print("#========================================================")
 
     # Transforms
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((224,224)),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
@@ -261,19 +274,10 @@ if __name__ == "__main__":
     # print("Test Dataset: ", len(test_dataset))
 
     # Create loaders
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS)
+    train_loader = DataLoader(train_dataset, batch_size = BATCH_SIZE, shuffle = True, num_workers = NUM_WORKERS)
+    test_loader = DataLoader(test_dataset, batch_size = BATCH_SIZE, shuffle = False, num_workers = NUM_WORKERS)
+    val_loader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = False, num_workers = NUM_WORKERS)
 
-    # Print our tuneable parameters
-    print("#========================================================")
-    print("NUM_EPOCHS = ", NUM_EPOCHS)
-    print("BATCH_SIZE = ", BATCH_SIZE)
-    print("NUM_FUSION_FEATURES = ", NUM_FUSION_FEATURES)
-    print("WEIGHT_DECAY = ", WEIGHT_DECAY)
-    print("LEARNING_RATE = ", LEARNING_RATE)
-    print("DROPOUT = ", DROPOUT)
-    print("#========================================================")
 
     # Model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -281,7 +285,7 @@ if __name__ == "__main__":
     print("\n")
     imageModel = resnet18(weights='ResNet18_Weights.DEFAULT')
     textModel = DistilBertModel.from_pretrained('distilbert-base-uncased')
-    model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES, DROPOUT).to(device)
+    model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES).to(device)
 
     # Training parameters
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay = WEIGHT_DECAY)
@@ -315,7 +319,7 @@ if __name__ == "__main__":
     # data(train_loader)
 
     # Training loop
-    best_loss = 1e+10  # best loss tracker
+    best_loss = 1e+10 # best loss tracker
     for epoch in range(NUM_EPOCHS):
         start_time = time.time()
         train_loss = train(model, train_loader, optimizer, criterion, device)
@@ -338,8 +342,9 @@ if __name__ == "__main__":
     for pred, class_ in zip(test_predictions, test_classes):
         if pred == class_:
             equal_count += 1
-
+            
     print("Correct Predictions: ", equal_count)
-    print("Total Labels: ", len(test_classes))
+    print("Total Labels: ", len(test_classes) )
     # print(test_predictions[0:10])
     # print(test_classes[0:10])
+
