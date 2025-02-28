@@ -17,7 +17,7 @@ import torchvision
 from torchvision.models import resnet18  # pretrained model
 from torchvision import transforms
 
-from transformers import DistilBertModel, DistilBertTokenizer
+from transformers import DistilBertModel, DistilBertTokenizer # type: ignore
 
 import os
 import re
@@ -104,7 +104,7 @@ class FusionDataSet(Dataset):
 
 
 class FusionNetwork(nn.Module):
-    def __init__(self, imageModel, textModel, num_classes, num_fusion_features):
+    def __init__(self, imageModel, textModel, num_classes, num_fusion_features, dropout=0.3):
         super(FusionNetwork, self).__init__()
         # Image path
         self.imageModel = imageModel
@@ -123,7 +123,7 @@ class FusionNetwork(nn.Module):
         self.fc_text_norm = nn.LayerNorm(num_fusion_features)
 
         # Dense fusion layer & Dropout
-        self.drop = nn.Dropout(DROPOUT)
+        self.drop = nn.Dropout(dropout)
         self.fusion_classifier = nn.Linear(num_fusion_features * 2, num_classes)
 
     def forward(self, image, text, attention_mask):
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     print("\n")
     imageModel = resnet18(weights='ResNet18_Weights.DEFAULT')
     textModel = DistilBertModel.from_pretrained('distilbert-base-uncased')
-    model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES).to(device)
+    model = FusionNetwork(imageModel, textModel, 4, NUM_FUSION_FEATURES, DROPOUT).to(device)
 
     # Training parameters
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay = WEIGHT_DECAY)
