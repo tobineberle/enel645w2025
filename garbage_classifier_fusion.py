@@ -56,7 +56,7 @@ class FusionDataSet(Dataset):
         
         # Also based off inclass example to sort through the file structure
         def get_data():
-            classes = sorted([label for label in os.listdir(self.dir) if os.path.isdir(label)])
+            classes = sorted([label for label in os.listdir(self.dir) if os.path.isdir(os.path.join(self.dir, label))])
             label_map = {class_name: idx for idx, class_name in enumerate(classes)}
 
             for class_name in classes:
