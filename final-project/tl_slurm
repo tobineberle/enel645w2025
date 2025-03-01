@@ -1,0 +1,32 @@
+#========================================================
+NUM_EPOCHS =  3
+BATCH_SIZE =  24
+WEIGHT_DECAY =  0.0001
+LEARNING_RATE =  0.001
+SAVE_NAME =  tl_cnn_best_model.pth
+#========================================================
+Loading datasets
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.9466565..2.64].
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-1.980906..2.5702832].
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.535425].
+Connected device:  cuda
+
+
+Epoch: 1, Train Loss: 0.30891
+Epoch: 1, Val Loss: 0.23904
+Saving Model
+Epoch Calculation Time (s): 1719.0s
+
+Epoch: 2, Train Loss: 0.27430
+Epoch: 2, Val Loss: 0.23177
+Saving Model
+Epoch Calculation Time (s): 417.8s
+
+Epoch: 3, Train Loss: 0.26876
+Epoch: 3, Val Loss: 0.22583
+Saving Model
+Epoch Calculation Time (s): 421.2s
+
+Test Accuracy: 90.92%
+Correct Predictions:  7269
+Total Labels:  7995

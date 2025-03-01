@@ -1,3 +1,3 @@
 .DS_Store
 /CVPR_2024_dataset_Test
-best_fusion_model.pth
+*.pth
