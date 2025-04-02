@@ -1,0 +1,46 @@
+#========================================================
+NUM_EPOCHS =  6
+BATCH_SIZE =  24
+WEIGHT_DECAY =  0.0001
+LEARNING_RATE =  0.001
+SAVE_NAME =  tl_cnn_best_model.pth
+#========================================================
+Loading datasets
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.343704].
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers). Got range [-2.117904..2.64].
+Connected device:  cuda
+
+
+Epoch: 1, Train Loss: 0.28955
+Epoch: 1, Val Loss: 0.21408
+Saving Model
+Epoch Calculation Time (s): 483.0s
+
+Epoch: 2, Train Loss: 0.20662
+Epoch: 2, Val Loss: 0.11106
+Saving Model
+Epoch Calculation Time (s): 464.1s
+
+Epoch: 3, Train Loss: 0.11667
+Epoch: 3, Val Loss: 0.08453
+Saving Model
+Epoch Calculation Time (s): 459.7s
+
+Epoch: 4, Train Loss: 0.09067
+Epoch: 4, Val Loss: 0.07516
+Saving Model
+Epoch Calculation Time (s): 457.7s
+
+Epoch: 5, Train Loss: 0.07544
+Epoch: 5, Val Loss: 0.05106
+Saving Model
+Epoch Calculation Time (s): 461.3s
+
+Epoch: 6, Train Loss: 0.06104
+Epoch: 6, Val Loss: 0.05220
+Epoch Calculation Time (s): 465.8s
+
+Test Accuracy: 98.47%
+Correct Predictions:  7873
+Total Labels:  7995
