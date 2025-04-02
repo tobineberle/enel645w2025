@@ -1,0 +1,61 @@
+#========================================================
+NUM_EPOCHS =  10
+BATCH_SIZE =  24
+WEIGHT_DECAY =  1e-05
+LEARNING_RATE =  0.0001
+SAVE_NAME =  fcnn_best_model.pth
+#========================================================
+Loading datasets
+Connected device:  cuda
+
+
+Epoch: 1, Train Loss: 0.53977
+Epoch: 1, Val Loss: 0.45246
+Saving Model
+Epoch Calculation Time (s): 426.3s
+
+Epoch: 2, Train Loss: 0.41574
+Epoch: 2, Val Loss: 0.42949
+Saving Model
+Epoch Calculation Time (s): 414.5s
+
+Epoch: 3, Train Loss: 0.33844
+Epoch: 3, Val Loss: 0.38413
+Saving Model
+Epoch Calculation Time (s): 422.5s
+
+Epoch: 4, Train Loss: 0.29160
+Epoch: 4, Val Loss: 0.37214
+Saving Model
+Epoch Calculation Time (s): 418.5s
+
+Epoch: 5, Train Loss: 0.25383
+Epoch: 5, Val Loss: 0.34284
+Saving Model
+Epoch Calculation Time (s): 414.1s
+
+Epoch: 6, Train Loss: 0.22919
+Epoch: 6, Val Loss: 0.33744
+Saving Model
+Epoch Calculation Time (s): 412.2s
+
+Epoch: 7, Train Loss: 0.21268
+Epoch: 7, Val Loss: 0.34444
+Epoch Calculation Time (s): 410.3s
+
+Epoch: 8, Train Loss: 0.19032
+Epoch: 8, Val Loss: 0.34745
+Epoch Calculation Time (s): 411.4s
+
+Epoch: 9, Train Loss: 0.17867
+Epoch: 9, Val Loss: 0.34260
+Epoch Calculation Time (s): 412.8s
+
+Epoch: 10, Train Loss: 0.11773
+Epoch: 10, Val Loss: 0.28830
+Saving Model
+Epoch Calculation Time (s): 414.6s
+
+Test Accuracy: 89.04%
+Correct Predictions:  7119
+Total Labels:  7995
